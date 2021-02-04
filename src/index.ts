@@ -15,6 +15,11 @@ export const ecParams = { G, n }
 export type UserSecretData = { a: BigNumber, b: BigNumber, f: Point }
 export type UnblindedSignature = { s: BigNumber, f: Point }
 
+export function messageToBigNumber(message: string) {
+    const msg = Buffer.from(message, 'utf8')
+    return new BigNumber(msg)
+}
+
 export function hashBigNumber(m: BigNumber) {
     const mHex = m.toString(16)
 
@@ -24,8 +29,12 @@ export function hashBigNumber(m: BigNumber) {
         return keccak256('0x0' + mHex).slice(2) // Trim 0x
 }
 
-export function bigNumberFromString(s: string) {
+export function stringToBigNumber(s: string) {
     return new BigNumber(s)
+}
+
+export function decodePoint(hexPoint: string): Point {
+    return secp256k1.keyFromPublic(Buffer.from(hexPoint, "hex")).getPublic()
 }
 
 function random(bytes: number) {
@@ -96,7 +105,7 @@ export function verify(m: BigNumber, s: UnblindedSignature, q: Point) {
     const sG = G.mul(s.s)
 
     const hHex = hashBigNumber(m)
-    
+
     const h = new BigNumber(Buffer.from(hHex, "hex"))
 
     const rx = s.f.getX().mod(n)
