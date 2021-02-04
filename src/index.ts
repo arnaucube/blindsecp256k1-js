@@ -1,0 +1,103 @@
+import { randomBytes } from 'crypto'
+import * as BigInteger from 'bigi'
+import { getCurveByName, Point } from 'ecurve'
+import { keccak256 } from "@ethersproject/keccak256"
+
+const ecparams = getCurveByName('secp256k1')
+const G = ecparams.G
+const n = ecparams.n as BigInteger
+
+export { ecparams }
+
+export type UserSecretData = { a: BigInteger, b: BigInteger, f: Point }
+export type UnblindedSignature = { s: BigInteger, f: Point }
+
+export function newBigFromString(s: string) {
+    let a = new BigInteger(null, null, null)
+    a.fromString(s, null)
+    return a
+}
+
+function random(bytes: number) {
+    let k: BigInteger
+    do {
+        k = BigInteger.fromByteArrayUnsigned(randomBytes(bytes)) as unknown as BigInteger
+    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
+    return k
+}
+
+export function newKeyPair() {
+    const sk = random(32)
+    return { sk: sk, pk: G.multiply(sk) }
+}
+
+export function newRequestParameters() {
+    const k = random(32)
+    return { k: k, signerR: G.multiply(k) }
+}
+
+/**
+ * Blinds the message for the signer R.
+ * @param {BigInteger} m
+ * @param {Point} signerR
+ * @returns {struct} {mBlinded: BigInteger, userSecretData: {a: BigInteger, b: BigInteger, f: Point}}
+ */
+export function blind(m: BigInteger, signerR: Point): { mBlinded: BigInteger, userSecretData: UserSecretData } {
+    const u: UserSecretData = { a: BigInteger.ZERO as BigInteger, b: BigInteger.ZERO as BigInteger, f: G }
+    u.a = random(32)
+    u.b = random(32)
+
+    const aR = signerR.multiply(u.a)
+    const bG = G.multiply(u.b)
+    u.f = aR.add(bG)
+
+    const rx = u.f.affineX.mod(n)
+
+    const ainv = u.a.modInverse(n as unknown as number)
+    const ainvrx = ainv.multiply(rx)
+
+    const mHex = m.toString(16)
+    const hHex = keccak256('0x' + mHex)
+    const h = BigInteger.fromHex(hHex.slice(2))
+    const mBlinded = ainvrx.multiply(h)
+
+    return { mBlinded: mBlinded.mod(n), userSecretData: u }
+}
+
+export function blindSign(sk: BigInteger, mBlinded: BigInteger, k: BigInteger): BigInteger {
+    let sBlind = sk.multiply(mBlinded)
+    sBlind = sBlind.add(k)
+    return sBlind.mod(n)
+}
+
+/**
+ * Unblinds the blinded signature.
+ * @param blinded signature
+ * @param userSecretData
+ * @returns unblinded signature
+ */
+export function unblind(sBlind: BigInteger, userSecretData: UserSecretData): UnblindedSignature {
+    const s = userSecretData.a.multiply(sBlind).add(userSecretData.b)
+    return { s: s.mod(n), f: userSecretData.f }
+}
+
+export function verify(m: BigInteger, s: UnblindedSignature, q: Point) {
+    const sG = G.multiply(s.s)
+
+    const mHex = m.toString(16)
+    const hHex = keccak256('0x' + mHex)
+    const h = BigInteger.fromHex(hHex.slice(2))
+
+    const rx = s.f.affineX.mod(n)
+    const right = s.f.add(
+        q.multiply(
+            rx.multiply(h)
+        )
+    )
+
+    if ((sG.affineX.toString() == right.affineX.toString())
+        && (sG.affineY.toString() == right.affineY.toString())) {
+        return true
+    }
+    return false
+}
