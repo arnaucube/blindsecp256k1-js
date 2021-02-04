@@ -57,9 +57,9 @@ export function newRequestParameters() {
 
 /**
  * Blinds the message for the signer R.
- * @param {BigNumber} m
- * @param {Point} signerR
- * @returns {struct} {mBlinded: BigNumber, userSecretData: {a: BigNumber, b: BigNumber, f: Point}}
+ * @param m The message to blind
+ * @param signerR
+ * @returns The blinded signature and the user secret data
  */
 export function blind(m: BigNumber, signerR: Point): { mBlinded: BigNumber, userSecretData: UserSecretData } {
     const u: UserSecretData = { a: new BigNumber(0), b: new BigNumber(0), f: G }
@@ -84,6 +84,7 @@ export function blind(m: BigNumber, signerR: Point): { mBlinded: BigNumber, user
     return { mBlinded: mBlinded.mod(n), userSecretData: u }
 }
 
+/** Performs a signature on a blinded message */
 export function blindSign(sk: BigNumber, mBlinded: BigNumber, k: BigNumber): BigNumber {
     let sBlind = sk.mul(mBlinded)
     sBlind = sBlind.add(k)
