@@ -75,7 +75,6 @@ export function blind(m: BigNumber, signerR: Point): { mBlinded: BigNumber, user
     const ainv = u.a.invm(n)
     const ainvrx = ainv.mul(rx)
 
-    // const mHex = m.toString(16)
     const hHex = hashBigNumber(m)
 
     const h = new BigNumber(Buffer.from(hHex, "hex"))
