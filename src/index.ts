@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto'
 import * as BigInteger from 'bigi'
 import { getCurveByName, Point } from 'ecurve'
-import { keccak256 } from "@ethersproject/keccak256"
+import { keccak256 } from '@ethersproject/keccak256'
 
 const ecparams = getCurveByName('secp256k1')
 const G = ecparams.G
@@ -11,6 +11,19 @@ export { ecparams }
 
 export type UserSecretData = { a: BigInteger, b: BigInteger, f: Point }
 export type UnblindedSignature = { s: BigInteger, f: Point }
+
+/**
+ * Imports a Point from hex string where X and Y coordinates were encoded as 32
+ * & 32 bytes in LittleEndian.
+ */
+export function importPointFromHex(pointHex: string) {
+    const xBuff = Buffer.from(pointHex.substr(0, 64), 'hex').reverse().toString('hex')
+    const yBuff = Buffer.from(pointHex.substr(64), 'hex').reverse().toString('hex')
+    const x = BigInteger.fromHex(xBuff)
+    const y = BigInteger.fromHex(yBuff)
+    const p = Point.fromAffine(ecparams, x, y)
+    return p
+}
 
 export function newBigFromString(s: string) {
     let a = new BigInteger(null, null, null)
@@ -22,7 +35,7 @@ function random(bytes: number) {
     let k: BigInteger
     do {
         k = BigInteger.fromByteArrayUnsigned(randomBytes(bytes)) as unknown as BigInteger
-    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
+    } while (k.toString() == '0' && k.gcd(n).toString() != '1')
     return k
 }
 
