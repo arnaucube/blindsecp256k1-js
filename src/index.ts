@@ -16,7 +16,7 @@ export type UnblindedSignature = { s: BigInteger, f: Point }
  * Imports a Point from hex string where X and Y coordinates were encoded as 32
  * & 32 bytes in LittleEndian.
  */
-export function importPointFromHex(pointHex: string) {
+export function pointFromHex(pointHex: string) {
     const xBuff = Buffer.from(pointHex.substr(0, 64), 'hex').reverse().toString('hex')
     const yBuff = Buffer.from(pointHex.substr(64), 'hex').reverse().toString('hex')
     const x = BigInteger.fromHex(xBuff)
@@ -25,18 +25,39 @@ export function importPointFromHex(pointHex: string) {
     return p
 }
 
+export function pointToHex(point: Point): string {
+    const buffX = point.affineX.toBuffer(32).reverse()
+    const buffY = point.affineY.toBuffer(32).reverse()
+
+    return buffX.toString("hex") + buffY.toString("hex")
+}
+
+export function signatureFromHex(hexSignature: string): UnblindedSignature {
+    if (!hexSignature || hexSignature.length != 192) throw new Error("Invalid hex signature (96 bytes expected)")
+
+    const s = BigInteger.fromBuffer(Buffer.from(hexSignature.substr(0, 64), "hex").reverse())
+    const f = pointFromHex(hexSignature.substr(64))
+    return { s, f }
+}
+
+export function signatureToHex(signature: UnblindedSignature): string {
+    if (!signature || !signature.f || !signature.s) throw new Error("The signature is empty")
+    const { f, s } = signature
+
+    // hex(swapEndiannes(s) ) + hex(f)
+    const flippedHexS = s.toBuffer(32).reverse().toString("hex")
+    return flippedHexS + pointToHex(f)
+}
+
+export function messageToBigNumber(message: string) {
+    const msg = Buffer.from(message, 'utf8')
+    return BigInteger.fromBuffer(msg)
+}
+
 export function newBigFromString(s: string) {
     let a = new BigInteger(null, null, null)
     a.fromString(s, null)
     return a
-}
-
-function random(bytes: number) {
-    let k: BigInteger
-    do {
-        k = BigInteger.fromByteArrayUnsigned(randomBytes(bytes)) as unknown as BigInteger
-    } while (k.toString() == '0' && k.gcd(n).toString() != '1')
-    return k
 }
 
 export function newKeyPair() {
@@ -113,4 +134,14 @@ export function verify(m: BigInteger, s: UnblindedSignature, q: Point) {
         return true
     }
     return false
+}
+
+// HELPERS
+
+function random(bytes: number) {
+    let k: BigInteger
+    do {
+        k = BigInteger.fromByteArrayUnsigned(randomBytes(bytes)) as unknown as BigInteger
+    } while (k.toString() == '0' && k.gcd(n).toString() != '1')
+    return k
 }
