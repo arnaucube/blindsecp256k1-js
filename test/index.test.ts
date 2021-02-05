@@ -13,7 +13,9 @@ import {
 	verify,
 	hashBigNumber,
 	Point,
-	BigNumber
+	BigNumber,
+	signatureToHex,
+	signatureFromHex
 } from "../src/index"
 
 describe("keccak256", function () {
@@ -51,5 +53,42 @@ describe("blind signatures", function () {
 
 		const verified = verify(msg, sig, pk)
 		assert(verified)
+	})
+})
+
+describe("encoding", () => {
+	it("should encode and decode signatures", () => {
+		const { sk } = newKeyPair()
+		const { k, signerR } = newRequestParameters()
+		const msg = messageToBigNumber("test")
+		const { mBlinded, userSecretData } = blind(msg, signerR)
+		const sBlind = blindSign(sk, mBlinded, k)
+		const sig = unblind(sBlind, userSecretData)
+
+		const hexSignature = signatureToHex(sig)
+		assert.strictEqual(hexSignature.length, 192)
+
+		const decodedSig = signatureFromHex(hexSignature)
+		assert.strictEqual(decodedSig.f.encode("hex", false).length, 130)
+
+		assert.strictEqual(signatureToHex(signatureFromHex(hexSignature)), hexSignature)
+
+		// explicit values
+		const hexSignature2 = "089a89f07bd41560454b1640fd30e51ee088d1be8355275a88e38a38f2e7a3af9e80fcc14af9c47c8066c6726e7d3cac9370494d5c67936b2978d6cecf5a4d21bf3ef00b060c47ba874c0764d662eff2d0e9daa8ba766f4aa6a2be8ec3d37523"
+
+		const decodedSig2 = signatureFromHex(hexSignature2)
+		assert.strictEqual(decodedSig2.s.toString("hex"), "afa3e7f2388ae3885a275583bed188e01ee530fd40164b456015d47bf0899a08")
+		assert.strictEqual(decodedSig2.f.encode("hex", false).substr(2), "9e80fcc14af9c47c8066c6726e7d3cac9370494d5c67936b2978d6cecf5a4d21bf3ef00b060c47ba874c0764d662eff2d0e9daa8ba766f4aa6a2be8ec3d37523")
+
+		assert.strictEqual(signatureToHex(signatureFromHex(hexSignature2)), hexSignature2)
+
+		// swapEndianness(s) starting with 0
+		const hexSignature3 = "089a89f07bd41560454b1640fd30e51ee088d1be8355275a88e38a38f2e7a30f9e80fcc14af9c47c8066c6726e7d3cac9370494d5c67936b2978d6cecf5a4d21bf3ef00b060c47ba874c0764d662eff2d0e9daa8ba766f4aa6a2be8ec3d37523"
+
+		const decodedSig3 = signatureFromHex(hexSignature3)
+		assert.strictEqual(decodedSig3.s.toString("hex"), /* 0 */ "fa3e7f2388ae3885a275583bed188e01ee530fd40164b456015d47bf0899a08")
+		assert.strictEqual(decodedSig3.f.encode("hex", false).substr(2), "9e80fcc14af9c47c8066c6726e7d3cac9370494d5c67936b2978d6cecf5a4d21bf3ef00b060c47ba874c0764d662eff2d0e9daa8ba766f4aa6a2be8ec3d37523")
+
+		assert.strictEqual(signatureToHex(signatureFromHex(hexSignature3)), hexSignature3)
 	})
 })
