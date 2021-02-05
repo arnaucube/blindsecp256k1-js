@@ -8,6 +8,8 @@ const G = ecparams.G
 const n = ecparams.n as BigInteger
 
 export { ecparams }
+export { BigInteger }
+export { Point }
 
 export type UserSecretData = { a: BigInteger, b: BigInteger, f: Point }
 export type UnblindedSignature = { s: BigInteger, f: Point }
