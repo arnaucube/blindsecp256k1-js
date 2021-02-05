@@ -37,14 +37,6 @@ export function decodePoint(hexPoint: string): Point {
     return secp256k1.keyFromPublic(Buffer.from(hexPoint, "hex")).getPublic()
 }
 
-function random(bytes: number) {
-    let k: BigNumber
-    do {
-        k = new BigNumber(randomBytes(bytes))
-    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
-    return k
-}
-
 export function newKeyPair() {
     const sk = random(32)
     return { sk: sk, pk: G.mul(sk) }
@@ -139,6 +131,16 @@ export function signatureFromHex(hexSignature: string): UnblindedSignature {
     const s = new BigNumber(Buffer.from(hexSignature.substr(0, 64), "hex").reverse())
     const f = decodePoint("04" + hexSignature.substr(64))
     return { s, f }
+}
+
+// HELPERS
+
+function random(bytes: number) {
+    let k: BigNumber
+    do {
+        k = new BigNumber(randomBytes(bytes))
+    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
+    return k
 }
 
 function zeroPad(hexString: string, byteLength: number) {
