@@ -37,14 +37,6 @@ export function decodePoint(hexPoint: string): Point {
     return secp256k1.keyFromPublic(Buffer.from(hexPoint, "hex")).getPublic()
 }
 
-function random(bytes: number) {
-    let k: BigNumber
-    do {
-        k = new BigNumber(randomBytes(bytes))
-    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
-    return k
-}
-
 export function newKeyPair() {
     const sk = random(32)
     return { sk: sk, pk: G.mul(sk) }
@@ -120,4 +112,41 @@ export function verify(m: BigNumber, s: UnblindedSignature, q: Point) {
         return true
     }
     return false
+}
+
+export function signatureToHex(signature: UnblindedSignature): string {
+    if (!signature || !signature.f || !signature.s) throw new Error("The signature is empty")
+    const { f, s } = signature
+
+    // hex(swapEndiannes(s) ) + hex(f)
+    const hexPaddedS = zeroPad(s.toBuffer().toString("hex"), 32)
+    const flippedHexS = Buffer.from(hexPaddedS, "hex").reverse().toString("hex")
+
+    return zeroPad(flippedHexS, 32) + zeroPad(f.encode("hex", false).substr(2), 64)  // strip 04
+}
+
+export function signatureFromHex(hexSignature: string): UnblindedSignature {
+    if (!hexSignature || hexSignature.length != 192) throw new Error("Invalid hex signature (96 bytes expected)")
+
+    const s = new BigNumber(Buffer.from(hexSignature.substr(0, 64), "hex").reverse())
+    const f = decodePoint("04" + hexSignature.substr(64))
+    return { s, f }
+}
+
+// HELPERS
+
+function random(bytes: number) {
+    let k: BigNumber
+    do {
+        k = new BigNumber(randomBytes(bytes))
+    } while (k.toString() == "0" && k.gcd(n).toString() != "1")
+    return k
+}
+
+function zeroPad(hexString: string, byteLength: number) {
+    if (hexString.length > (byteLength * 2)) throw new Error("Out of bounds")
+    while (hexString.length < (byteLength * 2)) {
+        hexString = "0" + hexString
+    }
+    return hexString
 }
