@@ -93,8 +93,9 @@ export function blind(m: BigInteger, signerR: Point): { mBlinded: BigInteger, us
     const ainvrx = ainv.multiply(rx)
 
     const mHex = m.toString(16)
-    const hHex = keccak256('0x' + zeroPad(mHex, 32)).substr(2)
+    const hHex = keccak256('0x' + evenHex(mHex)).substr(2)
     const h = BigInteger.fromHex(hHex)
+
     const mBlinded = ainvrx.multiply(h)
 
     return { mBlinded: mBlinded.mod(n), userSecretData: u }
@@ -121,7 +122,7 @@ export function verify(m: BigInteger, s: UnblindedSignature, q: Point) {
     const sG = G.multiply(s.s)
 
     const mHex = m.toString(16)
-    const hHex = keccak256('0x' + zeroPad(mHex, 32)).substr(2)
+    const hHex = keccak256('0x' + evenHex(mHex)).substr(2)
     const h = BigInteger.fromHex(hHex)
 
     const rx = s.f.affineX.mod(n)
@@ -148,9 +149,8 @@ function random(bytes: number) {
     return k
 }
 
-function zeroPad(hexString: string, byteLength: number) {
-    if (hexString.length > (byteLength * 2)) throw new Error("Out of bounds")
-    while (hexString.length < (byteLength * 2)) {
+export function evenHex(hexString: string) {
+    if ((hexString.length % 2) != 0) {
         hexString = "0" + hexString
     }
     return hexString

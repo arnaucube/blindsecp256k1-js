@@ -1,6 +1,6 @@
 {
   "name": "blindsecp256k1",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Blind signatures over secp256k1, compatible with https://github.com/arnaucube/go-blindsecp256k1",
   "main": "dist/index",
   "types": "dist/index",
@@ -8,6 +8,7 @@
     "prepublishOnly": "npm run build",
     "clean": "rimraf dist",
     "build": "npm run clean && ./node_modules/.bin/tsc",
+    "browserify": "npm run build && browserify dist/index.js --standalone blindsecp256k1 > dist/blindsecp256k1-browser.js",
     "watch": "./node_modules/.bin/tsc -w -p .",
     "ts-node": "./node_modules/.bin/ts-node",
     "test": "npm run build && ./node_modules/.bin/mocha -r ts-node/register test/**/*.ts"
@@ -31,6 +32,7 @@
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "browserify": "^16.5.0"
   }
 }

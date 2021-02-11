@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import * as BigInteger from 'bigi'
 import { keccak256 } from '@ethersproject/keccak256'
 
-import { pointFromHex, newKeyPair, newRequestParameters, blind, blindSign, unblind, verify, signatureFromHex, signatureToHex, messageToBigNumber, pointToHex } from '../src/index'
+import { pointFromHex, newKeyPair, newRequestParameters, blind, blindSign, unblind, verify, signatureFromHex, signatureToHex, messageToBigNumber, pointToHex, ecparams, newBigFromString, evenHex } from '../src/index'
 
 describe('keccak256', function () {
 	it('should hash strings and big numbers', async () => {
@@ -69,5 +69,25 @@ describe('import point from hex', function () {
 		assert.strictEqual(f.affineY.toString(10), "208182647280612121090241159906896377333338287898138605151276081386137599488")
 
 		assert.strictEqual(signatureToHex(signatureFromHex(originalSignatureHex)), originalSignatureHex)
+	})
+})
+
+describe('Test hash m odd bytes', function () {
+	it('should take odd hex value and prepare it (using evenHex) to be even for keccak256 input', async () => {
+		// This test is made with same values than
+		// https://github.com/arnaucube/go-blindsecp256k1 to ensure
+		// compatibility
+		let m = newBigFromString("3024162961766929396601888431330224482373544644288322432261208139289299439809")
+		let mHex = m.toString(16)
+		assert.strictEqual(57, mHex.substr(6).length)
+		let hHex = keccak256('0x' + evenHex(mHex).substr(6)).substr(2)
+		let h = BigInteger.fromHex(hHex)
+		assert.strictEqual("57523339312508913023232057765773019244858443678197951618720342803494056599369", h.toString())
+
+		mHex = m.toString(16) + "1234"
+		assert.strictEqual(67, mHex.length)
+		hHex = keccak256('0x' + evenHex(mHex)).substr(2)
+		h = BigInteger.fromHex(hHex)
+		assert.strictEqual("9697834584560956691445940439424778243200861871421750951058436814122640359156", h.toString())
 	})
 })
