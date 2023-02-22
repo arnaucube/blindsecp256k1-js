@@ -1,3 +1,4 @@
 node_modules
 blindsecp256k1-browser.js
 dist
+package-lock.json
