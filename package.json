@@ -1,6 +1,6 @@
 {
   "name": "blindsecp256k1",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Blind signatures over secp256k1, compatible with https://github.com/arnaucube/go-blindsecp256k1",
   "main": "dist/index",
   "types": "dist/index",
