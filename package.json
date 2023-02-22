@@ -16,8 +16,8 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "clean": "rimraf dist",
-    "build": "npm run clean && ./node_modules/.bin/tsc",
-    "browserify": "npm run build && browserify dist/index.js --standalone blindsecp256k1 > dist/blindsecp256k1-browser.js",
+    "build": "npm run clean && ./node_modules/.bin/tsc && npm run browserify",
+    "browserify": "browserify dist/index.js --standalone blindsecp256k1 > dist/blindsecp256k1-browser.js",
     "watch": "./node_modules/.bin/tsc -w -p .",
     "ts-node": "./node_modules/.bin/ts-node",
     "test": "npm run build && ./node_modules/.bin/mocha -r ts-node/register test/**/*.ts"
